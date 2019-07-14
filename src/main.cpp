@@ -165,11 +165,20 @@ bool match(char *src, char *pattern)
 #include <algorithm>
 #include <windows.data.json.h>
 
+bool eqMatch(void *json, const std::string &str, const std::string &value)
+{
+	if (!json.isObject())
+	{
+		return false;
+	}
+	
+}
+
 typedef void(*regHandle)(const std::string &str);
 std::unordered_map<const char *, regHandle> strHandle;
 
 struct Filter {
-
+	const std::string &preHandle(const std::string &str);
 	bool match(void *value);
 	void setFilterData(const std::string &str);
 	std::vector<std::string>_filterStrList;
@@ -205,7 +214,53 @@ void Filter::setFilterData(const std::string &str)
 		printf("%s\n", iter.c_str());
 	}
 }
+bool matchArray(int &json, const std::string &str,
+	const std::string::size_type startPos,
+	const std::string::size_type endPos,
+	int count)
+{
+	std::string newStr(str.substr(startPos, endPos));
+	newStr[endPos - startPos] = '\0';
 
+	Json::value &list = jsonValue[newStr.c_str()];
+	if (!list.isArray() && count  > 0)
+	{
+		return false;
+	}
+	if (count == 0)
+	{
+		return true;
+	}
+	std::string::size_type newStartPos = str.substr(endPos).find('.');
+	if (std::string::npos == newStartPos)
+	{
+		return false;
+	}
+
+	std::string newStr(str.substr(endPos, newStartPos));
+	newStr[newStartPos - endPos] = '\0';
+	for (int i = 0; i < json.size; ++i)
+	{
+		const Json::Value & iterm = list[i];
+		if (iterm.isMember(newStr.c_str()))
+		{
+			matchArray(json, str, endPos, newStartPos, count - 1);
+		}
+	}
+}
+const std::string & Filter::preHandle(const std::string &str)
+{
+	int *json;
+	int num = count(str.begin(), str.end(), '&');
+	if (num == 0)
+	{
+		return str;
+	}
+	else {
+
+	}
+	return string();
+}
 bool Filter::match(void *json)
 {
 	for (auto &filterIter : _filterStrList)
@@ -213,10 +268,11 @@ bool Filter::match(void *json)
 	    ///判断是否是只有字母和数字的
 		for (auto & strIter : strHandle)
 		{
-			//
-			if (std::string::npos != filterIter.find(strIter.first()))
+			std::string::size_type pos = filterIter.find(strIter.first);
+			if (std::string::npos != pos)
 			{
-
+				//preHandle
+				get
 			}
 		}
 	}
